@@ -16,7 +16,7 @@ const debugRender = (error, options) => {
  * @param {?Object}       options  编译选项
  * @return {function}
  */
-const compile = (source, options = {}) => {
+const compile = async (source, options = {}) => {
     if (typeof source !== 'string') {
         options = source;
     } else {
@@ -59,7 +59,7 @@ const compile = (source, options = {}) => {
     // 加载外部模板
     if (!source) {
         try {
-            source = options.loader(filename, options);
+            source = await options.loader(filename, options);
             options.source = source;
         } catch (e) {
             const error = new TemplateError({
@@ -81,7 +81,7 @@ const compile = (source, options = {}) => {
     const compiler = new Compiler(options);
 
     try {
-        fn = compiler.build();
+        fn = await compiler.build();
     } catch (error) {
         error = new TemplateError(error);
         if (options.bail) {
@@ -91,15 +91,15 @@ const compile = (source, options = {}) => {
         }
     }
 
-    const render = (data, blocks) => {
+    const render = async (data, blocks) => {
         try {
-            return fn(data, blocks);
+            return await fn(data, blocks);
         } catch (error) {
             // 运行时出错以调试模式重载
             if (!options.compileDebug) {
                 options.cache = false;
                 options.compileDebug = true;
-                return compile(options)(data, blocks);
+                return await compile(options)(data, blocks);
             }
 
             error = new TemplateError(error);
@@ -107,7 +107,7 @@ const compile = (source, options = {}) => {
             if (options.bail) {
                 throw error;
             } else {
-                return debugRender(error, options)();
+                return await debugRender(error, options)();
             }
         }
     };
