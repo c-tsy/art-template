@@ -3,7 +3,7 @@
  */
 const artRule = {
     test: /{{([@#]?)[ \t]*(\/?)([\w\W]*?)[ \t]*}}/,
-    use: function(match, raw, close, code) {
+    use: function (match, raw, close, code) {
         const compiler = this;
         const options = compiler.options;
         const esTokens = compiler.getEsTokens(code);
@@ -18,7 +18,7 @@ const artRule = {
         const warn = (oldSyntax, newSyntax) => {
             console.warn(
                 `${options.filename || 'anonymous'}:${match.line + 1}:${match.start + 1}\n` +
-                    `Template upgrade: {{${oldSyntax}}} -> {{${newSyntax}}}`
+                `Template upgrade: {{${oldSyntax}}} -> {{${newSyntax}}}`
             );
         };
 
@@ -93,59 +93,62 @@ const artRule = {
             case 'extend':
                 if (
                     values
-                        .join('')
-                        .trim()
-                        .indexOf('(') !== 0
+                    .join('')
+                    .trim()
+                    .indexOf('(') !== 0
                 ) {
                     // 执行函数省略 `()` 与 `,`
                     group = artRule._split(esTokens);
                     group.shift();
-                    code = `${key}(${group.join(',')})`;
+                    code = `await ${key}(${group.join(',')})`;
                     break;
                 }
 
-            default:
-                if (~values.indexOf('|')) {
-                    const v3split = ':'; // ... v3 compat ...
+                default:
+                    if (~values.indexOf('|')) {
+                        const v3split = ':'; // ... v3 compat ...
 
-                    // 将过滤器解析成二维数组
-                    const group = esTokens
-                        .reduce((group, token) => {
-                            const { value, type } = token;
-                            if (value === '|') {
-                                group.push([]);
-                            } else if (type !== `whitespace` && type !== `comment`) {
-                                if (!group.length) {
+                        // 将过滤器解析成二维数组
+                        const group = esTokens
+                            .reduce((group, token) => {
+                                const {
+                                    value,
+                                    type
+                                } = token;
+                                if (value === '|') {
                                     group.push([]);
+                                } else if (type !== `whitespace` && type !== `comment`) {
+                                    if (!group.length) {
+                                        group.push([]);
+                                    }
+                                    if (value === v3split && group[group.length - 1].length === 1) {
+                                        warn('value | filter: argv', 'value | filter argv');
+                                    } else {
+                                        group[group.length - 1].push(token);
+                                    }
                                 }
-                                if (value === v3split && group[group.length - 1].length === 1) {
-                                    warn('value | filter: argv', 'value | filter argv');
-                                } else {
-                                    group[group.length - 1].push(token);
-                                }
-                            }
-                            return group;
-                        }, [])
-                        .map(g => artRule._split(g));
+                                return group;
+                            }, [])
+                            .map(g => artRule._split(g));
 
-                    // 将过滤器管道化
-                    code = group.reduce(
-                        (accumulator, filter) => {
-                            const name = filter.shift();
-                            filter.unshift(accumulator);
+                        // 将过滤器管道化
+                        code = group.reduce(
+                            (accumulator, filter) => {
+                                const name = filter.shift();
+                                filter.unshift(accumulator);
 
-                            return `$imports.${name}(${filter.join(',')})`;
-                        },
-                        group
+                                return `await $imports.${name}(${filter.join(',')})`;
+                            },
+                            group
                             .shift()
                             .join(` `)
                             .trim()
-                    );
-                }
+                        );
+                    }
 
-                output = output || 'escape';
+                    output = output || 'escape';
 
-                break;
+                    break;
         }
 
         result.code = code;
@@ -158,7 +161,9 @@ const artRule = {
     // 支持基本运算、三元表达式、取值、运行函数，不支持 `typeof value` 操作
     // 只支持 string、number、boolean、null、undefined 这几种类型声明，不支持 function、object、array
     _split: esTokens => {
-        esTokens = esTokens.filter(({ type }) => {
+        esTokens = esTokens.filter(({
+            type
+        }) => {
             return type !== `whitespace` && type !== `comment`;
         });
 
@@ -166,7 +171,9 @@ const artRule = {
         let lastToken = esTokens.shift();
         const punctuator = `punctuator`;
         const close = /\]|\)/;
-        const group = [[lastToken]];
+        const group = [
+            [lastToken]
+        ];
 
         while (current < esTokens.length) {
             const esToken = esTokens[current];
