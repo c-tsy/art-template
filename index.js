@@ -1,5 +1,5 @@
-const template = require('./lib/index');
-const extension = require('./lib/extension');
+const template = require('./src/index');
+const extension = require('./src/extension');
 
 template.extension = extension;
 require.extensions[template.defaults.extname] = extension;
