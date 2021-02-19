@@ -12,7 +12,7 @@ declare const EACH = "$each";
 /** 文本输出函数 */
 declare const PRINT = "print";
 /** 包含子模板函数 */
-declare const INCLUDE = "await include";
+declare const INCLUDE = "include";
 /** 继承布局模板函数 */
 declare const EXTEND = "await extend";
 /** “模板块”读写函数 */

@@ -1,6 +1,7 @@
 const Compiler = require('./compiler');
 const defaults = require('./defaults');
 const TemplateError = require('./error');
+const include = require('./adapter/include')
 
 const debugRender = (error, options) => {
     options.onerror(error, options);
@@ -93,6 +94,7 @@ const compile = async (source, options = {}) => {
 
     const render = async (data, blocks) => {
         try {
+            data.include = include
             return await fn(data, blocks);
         } catch (error) {
             // 运行时出错以调试模式重载
